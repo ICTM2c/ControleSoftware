@@ -11,10 +11,10 @@ import Models.Order;
 import Models.Product;
 import TSPSimulator.Simulators.*;
 import TSPSimulator.TspSimulatorVisualizer;
+import Util.Util;
 import com.fazecast.jSerialComm.SerialPort;
 import com.fazecast.jSerialComm.SerialPortDataListener;
 import com.fazecast.jSerialComm.SerialPortEvent;
-import com.fazecast.jSerialComm.SerialPortPacketListener;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import javafx.geometry.Point2D;
@@ -41,10 +41,10 @@ public class GUI extends JFrame implements ActionListener, SerialPortDataListene
     private JComboBox<SerialPort> cbTspComPort;
     private JComboBox<SerialPort> cbBppComPort;
     private JButton btnRefreshCommPort;
+    private Order _order;
 
     private final int MAX_NUM_PRODUCTS = 3;
     private JButton btnSendToArduino;
-    private OutputStream retrieveRobotOutputStream;
 
     public GUI() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -181,10 +181,10 @@ public class GUI extends JFrame implements ActionListener, SerialPortDataListene
 
             // Deserialize it from Json to an Order object.
             Gson deserializer = new Gson();
-            Order order = deserializer.fromJson(json, Order.class);
+            _order = deserializer.fromJson(json, Order.class);
 
             // Find all the products which are linked to the order including their location.
-            List<Models.Product> products = DbProduct.Get().findProductsForOrder(order.getOrder());
+            List<Models.Product> products = DbProduct.Get().findProductsForOrder(_order.getOrderId());
 
             if (products.size() > 3) {
                 throw new TooManyProductsException(products.size(), MAX_NUM_PRODUCTS);
@@ -244,7 +244,6 @@ public class GUI extends JFrame implements ActionListener, SerialPortDataListene
         preparePort(portRetrieveRobot);
         preparePort(portSortRobot);
 
-
         try {
             // Wait for a few seconds before sending data. Otherwise the data is never received.
             Thread.sleep(2000);
@@ -262,8 +261,10 @@ public class GUI extends JFrame implements ActionListener, SerialPortDataListene
                 System.out.println(point.toString() + " has been picked up");
             }
 
+            // Send the robot to the unloading area.
+            // The robot will immediately start dropping the boxes when it gets there.
+            // For every box it drops it sends "box" and waits 3 seconds.
             sendToSerialPort(portRetrieveRobot, "9,9");
-            waitUntilDone(portRetrieveRobot);
 
             // The sorting robot will get the products in reverse
             Collections.reverse(route);
@@ -271,17 +272,18 @@ public class GUI extends JFrame implements ActionListener, SerialPortDataListene
             for (int i = 0; i < route.size(); i++) {
                 Point2D point = route.get(i);
                 Box correspondingBox = boxes.get(i);
-                sendToSerialPort(portRetrieveRobot, "dropNext;");
-
-                waitUntilDone(portRetrieveRobot);
-
                 String direction = pnlBPPSimulator.isFirstBox(correspondingBox) ? "l" : "r";
+                waitUntil(portRetrieveRobot, "box");
                 sendToSerialPort(portSortRobot, direction);
 
                 waitUntilDone(portSortRobot);
+
                 findProductByCoordinate(point, pnlBPPSimulator.getBoxes()).setIsPickedUp(true);
                 pnlBPPSimulator.refresh();
             }
+
+            Util.CreateDeliveryNote(pnlBPPSimulator.getBoxes(), _order);
+
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

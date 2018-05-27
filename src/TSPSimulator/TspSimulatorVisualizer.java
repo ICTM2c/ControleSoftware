@@ -20,33 +20,6 @@ public class TspSimulatorVisualizer extends JPanel {
     private List<Point2D> _route;
     //endregion
 
-    //region Events
-    private Runnable onStartSimulationCallback;
-    private Runnable onEndSimulationCallback;
-    private Consumer<List<Point2D>> onSelectionChangedCallback;
-    //endregion
-
-    //region RegisterCallbacks
-    public void registerOnStartSimulationCallback(Runnable callback) {
-        onStartSimulationCallback = callback;
-    }
-
-    public void registerOnEndSimulationCallback(Runnable callback) {
-        onEndSimulationCallback = callback;
-    }
-
-    public void registerOnSelectionChanged(Consumer<List<Point2D>> callback) {
-        onSelectionChangedCallback = callback;
-    }
-    //endregion
-
-    private void callOnSelectionChanged(List<Point2D> points) {
-        if (onSelectionChangedCallback == null) {
-            return;
-        }
-//        onSelectionChangedCallback.accept(points);
-    }
-
     public TspSimulatorVisualizer() {
         setPreferredSize(new Dimension(400, 400));
         setBackground(Color.WHITE);
@@ -87,7 +60,6 @@ public class TspSimulatorVisualizer extends JPanel {
     public void toggleIsSelected(int x, int y) {
         int index = makeIndex(x, y);
         _clicked[index] = !_clicked[index];
-        callOnSelectionChanged(getPoints());
     }
     //endregion
 
@@ -159,7 +131,7 @@ public class TspSimulatorVisualizer extends JPanel {
 
         // Create a green square at the start/end point
         g.setColor(Color.LIGHT_GRAY);
-        g.fillRect((int) ((double)(_sizeX - 1) / (double) _sizeX * (double) getWidth()), (int) ((double) 2.0 / (double) _sizeY * (double) getHeight()), squareWidth, squareHeight);
+        g.fillRect((int) ((double)(_sizeX - 1) / (double) _sizeX * (double) getWidth()), (int) ((double) 3.0 / (double) _sizeY * (double) getHeight()), squareWidth, squareHeight);
     }
 
     private boolean isPickedUp(int x, int y) {
@@ -198,7 +170,7 @@ public class TspSimulatorVisualizer extends JPanel {
 
     public List<Point2D> runSimulation() {
         List<Point2D> points = getPoints();
-        Point2D startEndPoint = new Point2D(_sizeX - 1, (_sizeY - 1) / 2);
+        Point2D startEndPoint = new Point2D(_sizeX - 1, 3);
         _route =_simulator.simulate(startEndPoint, points);
         drawPanel();
         return _route;

@@ -56,7 +56,7 @@ public class Product implements Comparable<Product> {
         return "ProductId " + getProductId() + ", Size: " + getSize();
     }
 
-    private int getProductId() {
+    public int getProductId() {
         return _productId;
     }
 

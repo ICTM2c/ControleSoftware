@@ -3,7 +3,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Box implements Comparable<Box> {
-
+    private static int s_boxIdCounter = 0;
+    private int _boxId = s_boxIdCounter++;
     private List<Product> Products;
     private static int Capacity = 50;
     private int CapacityLeftOver;
@@ -66,5 +67,9 @@ public class Box implements Comparable<Box> {
 
     public boolean canFit(Product product) {
         return CapacityLeftOver >= product.getSize();
+    }
+
+    public int getBoxId() {
+        return _boxId;
     }
 }
